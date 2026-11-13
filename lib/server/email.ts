@@ -32,7 +32,10 @@ function getTransporter(): Transporter {
 
 export async function sendEmail(to: string, subject: string, html: string): Promise<void> {
   if (isDryRun()) {
-    console.log(`[email dry-run] to=${to} subject=${JSON.stringify(subject)}`);
+    const link = html.match(/href="([^"]+)"/)?.[1];
+    console.log(
+      `[email dry-run] to=${to} subject=${JSON.stringify(subject)}${link ? ` link=${link}` : ""}`,
+    );
     return;
   }
 
