@@ -18,6 +18,7 @@ This repository is a **Next.js end-to-end re-implementation** of the original `b
 | Server services | `lib/server/` — auth, cache, rate limits, SSE, notifications, domain services |
 | Client data layer | `lib/client/` — TanStack Query hooks + axios client |
 | Docs | `docs/API_CONTRACT.md`, `docs/UI_SPEC.md`, `docs/PRD.md` |
+| Demo & viva | `docs/DEMO_GUIDE.md`, `docs/VIVA_GUIDE.md` |
 
 ### Deliberate differences from the original
 
