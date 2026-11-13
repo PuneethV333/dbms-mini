@@ -1,0 +1,114 @@
+// bSafe data model — Next.js end-to-end build.
+// SQLite keeps the demo zero-config; the schema mirrors the original Postgres model.
+// (SQLite has no native enums, so status/channel fields are validated in app code.)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  phone        String?  @unique
+  isAdmin      Boolean  @default(false) @map("is_admin")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  contacts EmergencyContact[]
+  alerts   Alert[]
+
+  @@map("users")
+}
+
+model EmergencyContact {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  phone        String?
+  email        String?
+  relationship String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  notificationDeliveries NotificationDelivery[]
+
+  @@unique([userId, phone])
+  @@unique([userId, email])
+  @@index([userId])
+  @@map("emergency_contacts")
+}
+
+model Alert {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status         String    @default("sent") // sent | acknowledged | resolved
+  trackingToken  String    @unique @map("tracking_token") @default(uuid())
+  triggeredAt    DateTime  @default(now()) @map("triggered_at")
+  resolvedAt     DateTime? @map("resolved_at")
+  lastLocationId String?   @unique @map("last_location_id")
+
+  lastLocation AlertLocation? @relation("LastLocation", fields: [lastLocationId], references: [id])
+  locations    AlertLocation[] @relation("AlertLocations")
+  activityLogs ActivityLog[]
+  notificationDeliveries NotificationDelivery[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("alerts")
+}
+
+model AlertLocation {
+  id         String   @id @default(uuid())
+  alertId    String   @map("alert_id")
+  alert      Alert    @relation("AlertLocations", fields: [alertId], references: [id], onDelete: Cascade)
+  latitude   Float
+  longitude  Float
+  accuracy   Float?
+  recordedAt DateTime @default(now()) @map("recorded_at")
+
+  lastLocationOf Alert? @relation("LastLocation")
+
+  @@index([alertId, recordedAt])
+  @@map("alert_locations")
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  alertId   String   @map("alert_id")
+  alert     Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  eventType String   @map("event_type")
+  actor     String?
+  timestamp DateTime @default(now())
+
+  @@index([alertId])
+  @@map("activity_logs")
+}
+
+model NotificationDelivery {
+  id        String    @id @default(uuid())
+  alertId   String    @map("alert_id")
+  alert     Alert     @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  contactId String    @map("contact_id")
+  contact   EmergencyContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  channel   String    @default("email") // email only — SMS is intentionally out of scope
+  status    String    @default("queued") // queued | sent | failed
+  attempts  Int       @default(0)
+  lastError String?   @map("last_error")
+  sentAt    DateTime? @map("sent_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@unique([alertId, contactId, channel])
+  @@index([alertId])
+  @@index([status])
+  @@map("notification_deliveries")
+}

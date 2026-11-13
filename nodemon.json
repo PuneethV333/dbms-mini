@@ -1,0 +1,12 @@
+{
+  "watch": [
+    "next.config.ts",
+    "postcss.config.mjs",
+    "package.json",
+    "prisma/schema.prisma",
+    "proxy.ts"
+  ],
+  "ext": "ts,tsx,js,mjs,json,prisma",
+  "ignore": ["node_modules", ".next", "prisma/dev.db", "prisma/dev.db-journal"],
+  "exec": "next dev -p 3000"
+}
